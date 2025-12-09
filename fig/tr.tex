@@ -1,0 +1,59 @@
+\documentclass[dvipdfmx]{standalone}
+\usepackage{circuitikz}
+\usepackage{tikz}
+\usetikzlibrary{calc} % $(A)+(dx,dy)$ の座標計算用
+
+\begin{document}
+% ====== 全体の“ノリ”はここで決める（数字はここだけ） ======
+\newcommand{\vv}{0.9}   % 縦方向の標準スパン（↑↓）
+\newcommand{\hh}{1.0}   % 横方向の標準スパン（←→）
+\ctikzset{
+  bipoles/length=1.1cm,        % 2端子素子の見た目の長さ
+  label distance=2mm,          % ラベルを少し離す
+  % bipoles/thickness=2        % 線・素子を太くしたいとき
+}
+
+\begin{circuitikz}[american voltages, scale=1.0]
+  % 見やすさ設定（任意）
+  \ctikzset{
+    bipoles/length=1.1cm,
+    label distance=2mm,
+  }
+
+  % ===== 電源：下端がGND、上端がVCCレール =====
+  \draw (0,0) node[ground](GND){}                  % GNDノードを明示
+        to[battery1,l=$V_{CC}$] (0,4.2)           % バッテリ上端をVCCへ
+        to[short] (3.6,4.2) coordinate (VCCrail); % 上レール（右へ）
+
+  % 出力端子（上レールの右端）
+  \draw (VCCrail) node[ocirc,label=right:$v_{out}$]{};
+
+  % ===== コレクタ側：上レール → RC → トランジスタ =====
+  % 上レールから「下に間」を作ってRC、その下にトランジスタのコレクタ
+  \draw (2.0,4.2) to[short] (2.0,3.6)
+                  to[R,l_=$R_C$, i>^=$I_C$] (2.0,2.8);
+
+  % トランジスタ本体：コレクタ位置を(2.0,2.4)
+  \draw (2.0,2.4) node[npn,anchor=collector] (Q1) {};
+
+  % コレクタ端子をRC下端に直結（完全に縦）
+  \draw (Q1.collector) to[short] (2.0,2.8);
+
+  % ===== エミッタ側：トランジスタ → RE → GND =====
+  % エミッタから下へ抵抗→さらに下でGND（左のGNDノードへ）
+  \draw (Q1.emitter) to[R,l_=$R_E$] (2.0,0.6)
+                     to[short] (2.0,0) to[short] (GND);
+
+  % ===== ベース側：入力源 → RB → ベース =====
+  % 入力源は左下、y=1.2の水平ラインに沿ってベースへ
+  \draw (0,1.2) to[sinusoidal voltage source,l=$v_{in}$] (0,0);   % 入力源→GND
+  \draw (1.0,1.2) to[R,l=$R_B$] (0,1.2);                          % RB
+  \draw (1.0,1.2) to[short] (1.8,1.2) to[short] (Q1.base);         % ベース接続
+
+  % 素子ラベル
+  \node[right] at (2.4,2.4) {$Q_1$ (NPN)};
+\end{circuitikz}
+
+
+
+\end{document}

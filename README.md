@@ -9,14 +9,16 @@
 By using a microcontroller (e.g,. Arduino / Raspberry Pi Pico) to synchronize the solenoid valve, camera shuttter, and flush firing with millisecond accuracy.
 
 ## Camera
+
 [camera](camera.md)
 
 ## Hardware
+
 [hardware](hardware.md)
 
 ## Code
 
-* [arduino](arduno/main.ino)
+* [arduino](arduino/main.ino)
 * [raspberry pi pico](pico/main.py)
 
 ## Usage
