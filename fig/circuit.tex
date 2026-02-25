@@ -1,0 +1,89 @@
+\documentclass[tikz,border=5pt]{standalone}
+\usepackage{circuitikz} % 追加パッケージなし
+
+%--------- FET 切替（環境により nmos か nfet かが異なる）---------
+\def\FET{nfet}   % ← もし未定義エラーが出たら「nmos」に変えて再コンパイル
+%\def\FET{nmos}
+%-------------------------------------------------------------------
+
+\begin{document}
+\begin{circuitikz}
+
+%--------------------------------
+% 1) チップ本体（dipchip, 30ピン）
+%--------------------------------
+\draw (0,0) node[dipchip, num pins=30] (U) {};
+% チップ名は枠の上（above）
+\node[above=2mm] at (U.north) {AE-RP2040};
+
+% 使用ピンの注記（視覚補助）
+\node[right=2mm] at (U.pin 20) {Pin 20 / GP16};
+\node[right=2mm] at (U.pin 21) {Pin 21 / GP15};
+% 「左側の Pin 23 / GND」を視覚整合として左ピンに注記（pin 10 を流用）
+\node[left=2mm]  at (U.pin 10) {Pin 23 / GND};
+
+%--------------------------------
+% 2) GNDバス（左→大きく下→右：チップやラベルと非交差）
+%--------------------------------
+\draw (U.pin 10) -- ++(-0.8,0) coordinate(gL)
+                 -- ++(0,-5.0) coordinate(gD)
+                 -- ++(13.0,0) coordinate(gR); % 右向き水平 GND バス
+
+%--------------------------------
+% 3) 上段：GP16 → ソレノイド駆動（1kΩ → N-FET → ソレノイド || ダイオード → +12V）
+%--------------------------------
+% ピン20をいったん上へ持ち上げて右へ（交差回避）
+\draw (U.pin 20) -- ++(0,0.8) coordinate(p20up) -- ++(2.2,0)
+      to[R=$1\,\mathrm{k}\Omega$] ++(1.8,0) coordinate(gatein);
+
+% MOSFET（環境差に対応：\FET で nmos / nfet を切替）
+\draw (gatein) node[\FET, anchor=G] (M1) {};
+
+% ソース → 縦落とし → 右の GND バスへ
+\draw (M1.S) -- ++(0,-0.8) coordinate(m1s_drop)
+             -- (m1s_drop |- gR) -- (gR);
+
+% ドレイン上：ソレノイド → 上で +12V ノード
+\draw (M1.D) -- ++(0,0.6) coordinate(sol_low)
+      to[L, l_=Solenoid] ++(0,2.2) coordinate(sol_top);
+\draw (sol_top) to[short,-o] ++(0,0.6) node[above] {$+12\,\mathrm{V}$};
+
+% ソレノイドと並列の保護ダイオード（アノード下、カソード上）
+\draw (sol_low) to[diode, l=$1\mathrm{N}4007$,*-*] (sol_top);
+
+%--------------------------------
+% 4) 下段：GP15 → カメラ制御（PC817 相当：入力 LED + 出力 NPN）
+%--------------------------------
+% ピン21をいったん下へ落として右へ（交差回避）
+\draw (U.pin 21) -- ++(0,-0.8) coordinate(p21down) -- ++(2.2,0)
+      to[R=$330\,\Omega$] ++(1.8,0) coordinate(led_in);
+
+% 入力側：LED相当（互換性重視のため diode 記号に"LED"ラベル）
+\draw (led_in) to[diode, l=LED] ++(0,-1.6) coordinate(led_gnd_drop);
+% LED カソード → 縦落とし → 右の GND バスへ
+\draw (led_gnd_drop) -- (led_gnd_drop |- gR) -- (gR);
+
+% 出力側：PC817 のトランジスタ相当（NPN）
+\draw (led_in) ++(2.6,0.0) node[npn, anchor=B] (Qopto) {};
+
+% エミッタ → Camera GND（外部端子）→ 内部的に GND バスへ
+\draw (Qopto.E) -- ++(0,-0.8) coordinate(cam_gnd_tap)
+      to[short,-o] ++(1.4,0) node[right]{Camera GND};
+\draw (cam_gnd_tap) -- (cam_gnd_tap |- gR) -- (gR);
+
+% コレクタ → Camera Tip（外部端子）
+\draw (Qopto.C) -- ++(1.2,0) to[short,-o] ++(1.0,0) node[right]{Camera Tip};
+
+% PC817 の枠（点線ボックス）とラベル
+\draw[dashed, rounded corners=2pt]
+      ($(led_in)+(0.3,0.5)$) rectangle ($(Qopto.C)+(1.4,-1.3)$);
+\node at ([xshift=4mm,yshift=-2mm]led_in) {PC817};
+
+%--------------------------------
+% 5) 参照ラベル（新構文を使わず x/yshift で配置）
+%--------------------------------
+\node at ([xshift=-2mm,yshift=0mm]p20up) {\footnotesize GP16};
+\node at ([xshift=-2mm,yshift=0mm]p21down) {\footnotesize GP15};
+
+\end{circuitikz}
+\end{document}

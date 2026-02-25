@@ -1,0 +1,19 @@
+\documentclass[dvipdfmx]{standalone}
+\usepackage{circuitikz}
+\begin{document}
+\begin{circuitikz}[american,]
+
+\ctikzset{tripoles/mos style/arrows}
+\def\normalcoord(#1){coordinate(#1)}
+\def\showcoord(#1){coordinate(#1) node[circle,red,draw,inner sep=1pt,pin={[red,overlay,inner sep=0.5pt,font=\tiny, pin distance=0.1cm,pin edge={red,overlay}]45:#1}](){}}
+\let\coord=\normalcoord
+\let\coord=\showcoord
+\draw (0,0) node [nmos,](Q) {};
+\draw (Q.S) to [R,l2^=$R_S$] ++(0,-3);
+% node[ground](GND){};
+%\path (Q.center) \coord(center)
+%(Q.G) \coord(G) (Q.D) \coord(D)
+%(Q.S) \coord(S);
+\end{circuitikz}
+
+\end{document}
